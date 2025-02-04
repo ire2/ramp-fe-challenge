@@ -81,7 +81,7 @@ export function App() {
           {paginatedTransactions?.nextPage && (
             <button
               className="RampButton"
-              disabled={paginatedTransactionsUtils.loading || paginatedTransactions?.nextPage == null || transactionsByEmployee?.length === 0}
+              disabled={paginatedTransactionsUtils.loading || transactionsByEmployee?.length === 0 || paginatedTransactions?.nextPage == null}
               onClick={async () => {
                 await loadAllTransactions()
               }}
