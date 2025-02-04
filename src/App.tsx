@@ -6,7 +6,7 @@ import { useEmployees } from "./hooks/useEmployees"
 import { usePaginatedTransactions } from "./hooks/usePaginatedTransactions"
 import { useTransactionsByEmployee } from "./hooks/useTransactionsByEmployee"
 import { EMPTY_EMPLOYEE } from "./utils/constants"
-import { Employee } from "./utils/types"
+import { Employee, Transaction } from "./utils/types"
 
 export function App() {
   const { data: employees, ...employeeUtils } = useEmployees()
@@ -14,9 +14,11 @@ export function App() {
   const { data: transactionsByEmployee, ...transactionsByEmployeeUtils } = useTransactionsByEmployee()
   const [isLoading, setIsLoading] = useState(false)
 
+  const [originalTransactions, setOriginalTransactions] = useState<Transaction[] | null>(null)
+
   const transactions = useMemo(
-    () => paginatedTransactions?.data ?? transactionsByEmployee ?? null,
-    [paginatedTransactions, transactionsByEmployee]
+    () => paginatedTransactions?.data ?? transactionsByEmployee ?? originalTransactions,
+    [paginatedTransactions, transactionsByEmployee, originalTransactions]
   )
 
   const loadAllTransactions = useCallback(async () => {
@@ -24,17 +26,18 @@ export function App() {
     transactionsByEmployeeUtils.invalidateData()
 
     await employeeUtils.fetchAll()
+    setOriginalTransactions(transactions)
     setIsLoading(false)
     await paginatedTransactionsUtils.fetchAll()
-
-  }, [employeeUtils, paginatedTransactionsUtils, transactionsByEmployeeUtils])
+  }, [employeeUtils, paginatedTransactionsUtils, transactionsByEmployeeUtils, transactions])
 
   const loadTransactionsByEmployee = useCallback(
     async (employeeId: string) => {
       paginatedTransactionsUtils.invalidateData()
+      setOriginalTransactions(transactions)
       await transactionsByEmployeeUtils.fetchById(employeeId)
     },
-    [paginatedTransactionsUtils, transactionsByEmployeeUtils]
+    [paginatedTransactionsUtils, transactionsByEmployeeUtils, transactions]
   )
 
   useEffect(() => {
@@ -61,14 +64,11 @@ export function App() {
             label: `${item.firstName} ${item.lastName}`,
           })}
           onChange={async (newValue) => {
-            if (newValue === null) {
-              return
-            }
-
-            if (newValue.id) {
-              await loadTransactionsByEmployee(newValue.id)
+            if (newValue === null || newValue.id === EMPTY_EMPLOYEE.id) {
+              setOriginalTransactions(transactions)
+              await loadAllTransactions()
             } else {
-              loadAllTransactions()
+              await loadTransactionsByEmployee(newValue.id)
             }
           }}
         />
@@ -77,13 +77,12 @@ export function App() {
 
         <div className="RampGrid">
           <Transactions transactions={transactions} />
-
-          {paginatedTransactions?.nextPage && (
+          {transactions !== null && transactionsByEmployee === null && paginatedTransactions?.nextPage !== null && (
             <button
               className="RampButton"
-              disabled={paginatedTransactionsUtils.loading || transactionsByEmployee?.length === 0 || paginatedTransactions?.nextPage == null}
+              disabled={paginatedTransactionsUtils.loading}
               onClick={async () => {
-                await loadAllTransactions()
+                await paginatedTransactionsUtils.fetchAll()
               }}
             >
               View More
