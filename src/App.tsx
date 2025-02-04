@@ -12,7 +12,7 @@ export function App() {
   const { data: employees, ...employeeUtils } = useEmployees()
   const { data: paginatedTransactions, ...paginatedTransactionsUtils } = usePaginatedTransactions()
   const { data: transactionsByEmployee, ...transactionsByEmployeeUtils } = useTransactionsByEmployee()
-  const [isLoading, setIsLoading] = useState(true)
+  const [isLoading, setIsLoading] = useState(false)
 
   const transactions = useMemo(
     () => paginatedTransactions?.data ?? transactionsByEmployee ?? null,
@@ -23,12 +23,11 @@ export function App() {
     setIsLoading(true)
     transactionsByEmployeeUtils.invalidateData()
 
-
+    await employeeUtils.fetchAll()
     setIsLoading(false)
     await paginatedTransactionsUtils.fetchAll()
 
-
-  }, [paginatedTransactionsUtils, transactionsByEmployeeUtils])
+  }, [employeeUtils, paginatedTransactionsUtils, transactionsByEmployeeUtils])
 
   const loadTransactionsByEmployee = useCallback(
     async (employeeId: string) => {
