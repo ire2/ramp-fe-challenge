@@ -1,0 +1,16 @@
+# Ignore system files
+.DS_Store
+Thumbs.db
+
+# Ignore dependencies
+node_modules/
+yarn.lock
+package-lock.json
+
+# Ignore environment variables
+.env
+
+# Ignore build and cache
+dist/
+build/
+.cache/
